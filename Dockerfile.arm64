@@ -1,0 +1,55 @@
+FROM --platform=linux/arm64/v8 debian:stable
+
+RUN apt-get update && \
+    apt-get install -y \
+    bash \
+    curl \
+    git \
+    gnat \
+    gprbuild \
+    libpython3-dev \
+    mercurial \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    python3-virtualenv \
+    python3-full \
+    subversion \
+    sudo \
+    unzip \
+    libssl-dev \
+    zsh \
+    pkg-config \
+    vim \
+    libgmp-dev \
+    wget && \
+    apt-get clean
+
+WORKDIR /app
+
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+RUN mkdir -p ~/.ssh/ && \
+    echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts && \
+    echo "github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=" >> ~/.ssh/known_hosts && \
+    echo "github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=" >> ~/.ssh/known_hosts && \
+    echo "github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=" >> ~/.ssh/known_hosts
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+WORKDIR /app/alr
+
+# no official alr release: RUN wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-x86_64-linux.zip && unzip alr-2.0.1-bin-x86_64-linux.zip
+RUN wget https://github.com/reznikmm/aarch64-alire-index/releases/download/v1.2.1/alr-1.2.1-bin-aarch64-linux.zip && unzip alr-1.2.1-bin-aarch64-linux.zip
+
+ENV PATH="/app/alr/bin:${PATH}"
+
+WORKDIR /app
+
+RUN git clone https://github.com/jklmnn/gpr-rust.git
+
+WORKDIR /app/gpr-rust/examples/ada_hello
+
+RUN /root/.cargo/bin/cargo build
+RUN LD_LIBRARY_PATH=ada_hello/lib /root/.cargo/bin/cargo run
+ENV LD_LIBRARY_PATH=ada_hello/lib
